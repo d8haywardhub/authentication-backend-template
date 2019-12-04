@@ -15,8 +15,9 @@ export const userSchemaDefinition: mongoose.SchemaDefinition = {
 
     password: { type: String },
 
-    roles: {
-        type: String
+    role: {
+        type: String,
+        default: "user"
     },
     
     disabled: {
@@ -27,11 +28,7 @@ export const userSchemaDefinition: mongoose.SchemaDefinition = {
     resetRequired: {
         type: Boolean,
         default: false
-    },
-
-    _lastLogin: {
-        type: Date
-    },
+    }
 
 
 };

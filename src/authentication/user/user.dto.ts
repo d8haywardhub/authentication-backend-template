@@ -11,6 +11,15 @@ class CreateUserDto {
   @IsString()
   public password: string;
 
+  @IsString()
+  public role: string;
+  
+  @IsOptional()
+  public disabled: string;
+
+  @IsOptional()
+  public resetRequired: string;
+
   @IsOptional()
   @ValidateNested()
   public address?: CreateAddressDto;

@@ -6,8 +6,6 @@ import * as passport from 'passport';
 import Controller from './common/interfaces/controller.interface';
 //import errorMiddleware from './middleware/error.middleware';
 
-//const ensureAuthenticated = require("./server/middleware/ensureAuthenticated");
-import ensureAuthenticated from './authentication/authentication/authentication.middleware';
 
 class App {
   public app: express.Application;

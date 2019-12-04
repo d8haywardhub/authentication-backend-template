@@ -3,20 +3,9 @@ interface User {
     name: string,
     email: string,
     password: string,
-    address?: {
-        street: string,
-        city: string,
-    }
-
-
-    roles: string,
-    
+    role: string,
     disabled: boolean,
-
-
-    resetRequired: boolean,
-
-    _lastLogin: Date
+    resetRequired: boolean
 }
 
 export default User;
