@@ -4,7 +4,7 @@ import * as mongoose from 'mongoose';
 import * as passport from 'passport';
 
 import Controller from './common/interfaces/controller.interface';
-//import errorMiddleware from './middleware/error.middleware';
+import errorMiddleware from './common/middleware/error.middleware';
 
 
 class App {
@@ -18,7 +18,7 @@ class App {
     this.connectToTheDatabase();
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
-    //this.initializeErrorHandling();
+    this.initializeErrorHandling();
   }
 
   public listen() {
@@ -41,9 +41,9 @@ class App {
     });
   }
 
-  //private initializeErrorHandling() {
-  //  this.app.use(errorMiddleware);
-  //}
+  private initializeErrorHandling() {
+    this.app.use(errorMiddleware);
+  }
 
   private connectToTheDatabase() {
     const {

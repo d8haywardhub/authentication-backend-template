@@ -5,17 +5,19 @@ class UserService {
 
     public user:UserModel = new UserModel();
 
-    constructor() {
-
-    }
+    constructor() { }
 
     public getUser = async (email: string): Promise<User> => {
         debugger;
         return this.user.userModel.findOne({"email": email})
     }
 
-    public getCount = async (email: string): Promise<number> => {
+    public getUserCount = async (email: string): Promise<number> => {
         return this.user.userModel.count({"email": email})
+    }
+
+    public getDocumentCount = async (): Promise<number> => {
+        return this.user.userModel.count({});
     }
 
     public createUser = async (userData: any): Promise<User> => {

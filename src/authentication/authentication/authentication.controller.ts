@@ -21,15 +21,32 @@ class AuthenticationController implements Controller {
         this.router.post(`${this.path}/login`, this.loggingIn);
     }
 
+
+    private getJwtResponse = async (userDocument: any) => {
+
+        // get and sign jwt token
+        const jwtPayload = { "_id": userDocument._id, "name": userDocument.name, "email": userDocument.email }
+        var token = await jwtUtil.sign(jwtPayload);
+        // return login/register response.... contains jwt token for future RESTful request verification
+        return {
+            user: {
+                email: userDocument.email,
+                name: userDocument.name,
+            },
+            token: token
+        };
+    }
+
+
     private registration = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const registrationData: CreateUserDto = req.body;
-        const { name, email, password } = registrationData; //req.body && req.body.user;
+        const { name, email, password } = registrationData;
 
         try {
 
             async function checkEmail() {
                 debugger;
-                const numUsers = await userService.getCount(registrationData.email);
+                const numUsers = await userService.getUserCount(registrationData.email);
                 if (numUsers !== 0) {
                     return Promise.reject({ "message": "Error: email already exists." });
                   }
@@ -37,6 +54,8 @@ class AuthenticationController implements Controller {
             }
             
             async function createUser() {
+                debugger;
+                const numUsers = await userService.getDocumentCount();
                 const hashedPwd = await new Promise((resolve, reject) => {
                     const saltRounds:number = 10;
                     bcrypt.hash(password, saltRounds, (error:Error, hash:any) => {
@@ -47,10 +66,15 @@ class AuthenticationController implements Controller {
                     });
 
                 });
+                let role = "admin"; //"user";
+                if (numUsers === 0) {
+                    role = "admin";
+                }
                 const newUser = {
                     password: hashedPwd,
                     email,
                     name,
+                    role
                 }
 
                 const user = await userService.createUser(newUser);
@@ -59,13 +83,17 @@ class AuthenticationController implements Controller {
             }
 
             if (await checkEmail()) {
-                const newUser = await createUser();
+                const newUserDocument = await createUser();
     
-                const jwtPayload = { "_id": newUser._id, "name": newUser.name, "email": newUser.email }
-                var token = await jwtUtil.sign(jwtPayload);
+                //const jwtPayload = { "_id": newUserDocument._id, "name": newUserDocument.name, "email": newUserDocument.email }
+                //var token = await jwtUtil.sign(jwtPayload);
       
-                const user = { "email": newUser.email, "name":newUser.name };
-                return res.json({ user, token }).status(200).end();
+                //const user = { "email": newUserDocument.email, "name":newUserDocument.name };
+                //return res.json({ user, token }).status(200).end();
+
+                const jwtResp = this.getJwtResponse(newUserDocument);
+                return res.json(jwtResp).status(200).end();
+
             } else {
                 console.log("shouldn't get here..... exception expected as user already exists!")
             }
@@ -81,48 +109,46 @@ class AuthenticationController implements Controller {
 
     private loggingIn = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const loginData: LogInDto = req.body; 
-        console.dir(loginData);
-        debugger;
+        //console.dir(loginData);
         try {
-            const userRecord = await userService.getUser(loginData.email);
-
-            if (!userRecord) {
-                //throw new Error('User not found');
-                //next(new PostNotFoundException(id));
+            const userDocument = await userService.getUser(loginData.email);
+            if (!userDocument) {
                 next(new Error('User not found'));
             }
             else {
-                /*
-                const correctPassword = await bcrypt.compare(password, userRecord.password);
+                // Check for correct password
+                const correctPassword = await bcrypt.compare(loginData.password, userDocument.password);
                 if (!correctPassword) {
                     console.log('Incorrect password')
                     throw new Error('Incorrect password')
                 }
-                */
-
-                const jwtPayload = { "_id": userRecord._id, "name": userRecord.name, "email": userRecord.email }
+                // get and sign jwt token
+                /*
+                const jwtPayload = { "_id": userDocument._id, "name": userDocument.name, "email": userDocument.email }
                 var token = await jwtUtil.sign(jwtPayload);
-
+                // generate login response.... contains jwt token for future RESTful request verification
                 const loginResponse = {
                     user: {
-                        email: userRecord.email,
-                        name: userRecord.name,
+                        email: userDocument.email,
+                        name: userDocument.name,
                     },
                     token: token
                 };
-    
+                // send successful response
                 return res.status(200).json(loginResponse).end();
+                */
+
+                const jwtResp = this.getJwtResponse(userDocument);
+                // send successful response
+                return res.status(200).json(jwtResp).end();
+                //return res.json(jwtResp).status(200).end();
             }
         } catch(error) {
-            //throw new Error(error);
             console.log("Exception occured loggingIn .... error: ", error);
-            //next({status: 500, message: error.message})
             //next(new NotAuthorizedException());
-            res.status(500).json({ "message": "Login Failed" });
+            //res.status(500).json({ "message": "Login Failed" });
+            next(new Error('Login failed'));
         }
-
-        //console.dir(userRecordDoc);
-        //res.send({"TBD": "Implement logging in"});
 
     }
 }
