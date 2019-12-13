@@ -41,7 +41,7 @@ class CustomerController { // implements Controller {
                     res.send(info.message);
                 } else {
                     // User is authenticated .... next
-                    if (serverKey === payload.serverKey) {
+                    if (serverKey === ""+payload.serverKey) {
                         next();
                     } else {
                         next(new HttpException(500, `Authentication error - request contains invalid secret key`));
