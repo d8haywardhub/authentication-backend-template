@@ -3,6 +3,8 @@ import * as express from 'express';
 import * as mongoose from 'mongoose';
 import * as passport from 'passport';
 
+import * as cookieParser from 'cookie-parser';
+
 import Controller from './common/interfaces/controller.interface';
 import errorMiddleware from './common/middleware/error.middleware';
 
@@ -29,6 +31,7 @@ class App {
 
   private initializeMiddlewares() {
     this.app.use(bodyParser.json());
+    this.app.use(cookieParser());
 
     require('./authentication/authentication/passport.jwt')(passport);
     this.app.use(passport.initialize());

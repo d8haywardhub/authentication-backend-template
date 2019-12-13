@@ -27,7 +27,11 @@ class CustomerController { // implements Controller {
 
     private auth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         try {
-            passport.authenticate("jwt",{session: false}, (error, user, info) => {
+            debugger;
+            const serverKey = req.get('Authorization');
+            //console.dir(serverKey);
+            if (serverKey === undefined) return next(new HttpException(500, `Authentication error - invalid request`));
+            passport.authenticate("jwt",{session: false}, (error, payload, info) => {
                 if (error) {
                      console.log(error);
                      next(new HttpException(500, `unexpected error during get customers ${error}`));
@@ -37,7 +41,12 @@ class CustomerController { // implements Controller {
                     res.send(info.message);
                 } else {
                     // User is authenticated .... next
-                    next();
+                    if (serverKey === payload.serverKey) {
+                        next();
+                    } else {
+                        next(new HttpException(500, `Authentication error - request contains invalid secret key`));
+                    }
+
                 }
             })(req, res, next);
         } catch(error) {

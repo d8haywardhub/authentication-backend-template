@@ -7,6 +7,16 @@ import CreateUserDto from '../user/user.dto';
 import userService from '../user/user.service'
 import jwtUtil from './jwt.util';
 
+interface AuthResponse {
+    user: UserInfo,
+    serverKey: number
+}
+
+interface UserInfo {
+    email: string,
+    name: string
+}
+
 
 class AuthenticationController implements Controller {
     public path:string = '/auth';
@@ -23,7 +33,7 @@ class AuthenticationController implements Controller {
 
 
     private getJwtResponse = async (userDocument: any) => {
-
+        debugger;
         // get and sign jwt token
         const jwtPayload = { "_id": userDocument._id, "name": userDocument.name, "email": userDocument.email }
         var token = await jwtUtil.sign(jwtPayload);
@@ -34,6 +44,38 @@ class AuthenticationController implements Controller {
                 name: userDocument.name,
             },
             token: token
+        };
+    }
+
+    private getRandomInt = () => {
+        const min = Math.ceil(0);
+        const max = Math.floor(10000);
+        return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+      }
+
+    private handleJwtResponse = async (userDocument: any, res: express.Response):Promise<AuthResponse> => {
+        debugger;
+        const serverSideKeyCSRF = this.getRandomInt();
+        // get and sign jwt token
+        const jwtPayload = { "_id": userDocument._id, "name": userDocument.name, "email": userDocument.email, "serverKey": serverSideKeyCSRF }
+        var token = await jwtUtil.sign(jwtPayload);
+        // return login/register response.... contains secure cooie with jwt token and csrf used in JWT payload for future RESTful request verification
+        
+        
+        res.cookie('jwt',token,{
+            //signed:true,
+            secure:false,                // true if using HTTPS   TODO configuration!!!!
+            httpOnly:true,
+            //maxAge:1000*60*60*24*5
+        });
+        
+        
+        return {
+            user: {
+                email: userDocument.email,
+                name: userDocument.name,
+            },
+            serverKey: serverSideKeyCSRF
         };
     }
 
@@ -85,13 +127,8 @@ class AuthenticationController implements Controller {
             if (await checkEmail()) {
                 const newUserDocument = await createUser();
     
-                //const jwtPayload = { "_id": newUserDocument._id, "name": newUserDocument.name, "email": newUserDocument.email }
-                //var token = await jwtUtil.sign(jwtPayload);
-      
-                //const user = { "email": newUserDocument.email, "name":newUserDocument.name };
-                //return res.json({ user, token }).status(200).end();
-
-                const jwtResp = this.getJwtResponse(newUserDocument);
+                //const jwtResp = await this.getJwtResponse(newUserDocument);
+                const jwtResp:AuthResponse = await this.handleJwtResponse(newUserDocument, res);
                 return res.json(jwtResp).status(200).end();
 
             } else {
@@ -123,22 +160,9 @@ class AuthenticationController implements Controller {
                     throw new Error('Incorrect password')
                 }
                 // get and sign jwt token
-                /*
-                const jwtPayload = { "_id": userDocument._id, "name": userDocument.name, "email": userDocument.email }
-                var token = await jwtUtil.sign(jwtPayload);
-                // generate login response.... contains jwt token for future RESTful request verification
-                const loginResponse = {
-                    user: {
-                        email: userDocument.email,
-                        name: userDocument.name,
-                    },
-                    token: token
-                };
-                // send successful response
-                return res.status(200).json(loginResponse).end();
-                */
-
-                const jwtResp = this.getJwtResponse(userDocument);
+                //const jwtResp = await this.getJwtResponse(userDocument);
+                const jwtResp:AuthResponse = await this.handleJwtResponse(userDocument, res);
+                debugger;
                 // send successful response
                 return res.status(200).json(jwtResp).end();
                 //return res.json(jwtResp).status(200).end();
