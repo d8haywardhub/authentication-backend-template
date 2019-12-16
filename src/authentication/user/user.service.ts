@@ -8,7 +8,6 @@ class UserService {
     constructor() { }
 
     public getUser = async (email: string): Promise<User> => {
-        debugger;
         return this.user.userModel.findOne({"email": email})
     }
 

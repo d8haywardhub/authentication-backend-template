@@ -6,6 +6,8 @@ import customerService from './customer.service'
 import CustomersNotFoundException from '../common/exceptions/CustomerNotFoundException';
 import HttpException from '../common/exceptions/HttpException';
 
+// Test controller for testing authentication and API REST requests.....
+
 class CustomerController { // implements Controller {
     public path:string = '/customers';
     public router = express.Router();
@@ -15,43 +17,11 @@ class CustomerController { // implements Controller {
     }
 
     private initializeRoutes() {
-        // Check authentication for all Customer routes
-        this.router.use('/', this.auth);
-
         // Customer routes
         this.router.get(`${this.path}`, this.customers);
         this.router.post(`${this.path}`, this.createCustomer);
         this.router.patch(`${this.path}/:id`, this.modifyCustomer);         // TODO validationMiddleware(CreatePostDto, this.skipMissingProperties)
         this.router.delete(`${this.path}/:id`, this.deleteCustomer); 
-    }
-
-    private auth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-        try {
-            debugger;
-            const serverKey = req.get('Authorization');
-            //console.dir(serverKey);
-            if (serverKey === undefined) return next(new HttpException(500, `Authentication error - invalid request`));
-            passport.authenticate("jwt",{session: false}, (error, payload, info) => {
-                if (error) {
-                     console.log(error);
-                     next(new HttpException(500, `unexpected error during get customers ${error}`));
-                }
-                if (info !== undefined) {
-                    console.log(info.message);
-                    res.send(info.message);
-                } else {
-                    // User is authenticated .... next
-                    if (serverKey === ""+payload.serverKey) {
-                        next();
-                    } else {
-                        next(new HttpException(500, `Authentication error - request contains invalid secret key`));
-                    }
-
-                }
-            })(req, res, next);
-        } catch(error) {
-            next(new HttpException(500, `unexpected error during get users ${error}`));
-        }
     }
 
     private createCustomer = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
