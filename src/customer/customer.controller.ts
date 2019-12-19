@@ -60,7 +60,6 @@ class CustomerController { // implements Controller {
     private customers = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         try {
             const customers = await customerService.getCustomers({});
-            console.dir(customers.length);
             if (customers) {
                 //console.dir("/customers returned: "+customers);
                 res.send(customers);

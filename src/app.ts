@@ -2,8 +2,8 @@ import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 import * as passport from 'passport';
-
 import * as cookieParser from 'cookie-parser';
+import * as helmet from 'helmet';
 
 import Controller from './common/interfaces/controller.interface';
 import errorMiddleware from './common/middleware/error.middleware';
@@ -36,6 +36,9 @@ class App {
     require('./authentication/authentication/passport.jwt')(passport);
     this.app.use(passport.initialize());
     //this.app.use(passport.session());
+
+    // protects app from some well-known web vulnerabilities by setting HTTP headers appropriately
+    this.app.use(helmet())
   }
 
   private initializeControllers(controllers: Controller[]) {
