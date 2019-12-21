@@ -1,5 +1,5 @@
 import {
-  cleanEnv, port, str,
+  cleanEnv, port, str, num, bool
 } from 'envalid';
 
 function validateEnv() {
@@ -9,6 +9,10 @@ function validateEnv() {
     MONGO_DOMAIN: str(),
     MONGO_DBNAME: str(),
     MONGO_PORT: port(),
+    COOKIE_MAXAGE: num(),
+    COOKIE_HTTPONLY: bool(),
+    COOKIE_SECURE: bool(),
+    REDIS_URL: str()
   });
 }
 

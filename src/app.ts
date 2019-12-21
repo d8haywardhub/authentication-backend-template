@@ -7,6 +7,7 @@ import * as helmet from 'helmet';
 
 import Controller from './common/interfaces/controller.interface';
 import errorMiddleware from './common/middleware/error.middleware';
+//import ratelimiterMiddleware from './common/middleware/ratelimiter-slidingwindow.middleware';
 
 
 class App {
@@ -38,7 +39,8 @@ class App {
     //this.app.use(passport.session());
 
     // protects app from some well-known web vulnerabilities by setting HTTP headers appropriately
-    this.app.use(helmet())
+    this.app.use(helmet());
+    //this.app.use(ratelimiterMiddleware());
   }
 
   private initializeControllers(controllers: Controller[]) {

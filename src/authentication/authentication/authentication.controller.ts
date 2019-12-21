@@ -3,8 +3,6 @@ import * as bcrypt from 'bcrypt';
 import passport = require('passport');
 
 //import * as redis from 'redis';
-//const { RateLimiterRedis } = require('rate-limiter-flexible');
-//import { RateLimiterRedis } from 'rate-limiter-flexible';
 
 import Controller from '../../common/interfaces/controller.interface';
 import LogInDto from './logIn.dto';
@@ -12,6 +10,8 @@ import CreateUserDto from '../user/user.dto';
 import userService from '../user/user.service'
 import jwtUtil from './jwt.util';
 import HttpException from '../../common/exceptions/HttpException';
+//const ratelimiterMiddleware = require('../../common/middleware/ratelimiter-slidingwindow.middleware');
+const ratelimiterMiddleware = require('../../common/middleware/ratelimiter.middleware');
 
 interface AuthResponse {
     user: UserInfo,
@@ -24,56 +24,23 @@ interface UserInfo {
     role: string
 }
 
-
 class AuthenticationController implements Controller {
     public path:string = '/auth';
     public router = express.Router();
-    /*
-    private redisClient;    //:redis.RedisClient;
-    private maxWrongAttemptsByIPperMinute = 2;  //5;
-    private maxWrongAttemptsByIPperDay = 100;
-    */
 
     constructor() {
-        //this.redisClient = redis.createClient({
-        //    enable_offline_queue: false,
-        //});
         this.initializeRoutes();
     }
 
-
-
-
-    /*
-    private limiterFastBruteByIP = new RateLimiterRedis({
-        redis: this.redisClient,
-        keyPrefix: 'login_fail_ip_per_minute',
-        points: this.maxWrongAttemptsByIPperMinute,
-        duration: 30,
-        blockDuration: 60 * 10, // Block for 10 minutes, if 5 wrong attempts per 30 seconds
-      });
-      
-    private limiterSlowBruteByIP = new RateLimiterRedis({
-        redis: this.redisClient,
-        keyPrefix: 'login_fail_ip_per_day',
-        points: this.maxWrongAttemptsByIPperDay,
-        duration: 60 * 60 * 24,
-        blockDuration: 60 * 60 * 24, // Block for 1 day, if 100 wrong attempts per day
-      });
-      */
-
-
-
     private initializeRoutes() {
         // No need to check authentication during registration or login requests
-        this.router.post(`${this.path}/register`, this.registration);
-        this.router.post(`${this.path}/login`, this.loggingIn);
-
+        this.router.post(`${this.path}/register`, this.registration, ratelimiterMiddleware);
+        this.router.post(`${this.path}/login`, this.loggingIn, ratelimiterMiddleware);
 
         // Check authentication for all OTHER requests
         this.router.use('/', this.ensureAuthenticated);
 
-        // 
+        // logout
         this.router.post(`${this.path}/logout`, this.loggingOut);
     }
 
@@ -199,56 +166,33 @@ class AuthenticationController implements Controller {
                 return res.json(jwtResp).status(200).end();
 
             } else {
-                console.log("shouldn't get here..... exception expected as user already exists!")
+                console.log("shouldn't get here..... exception expected as user already exists!");
+                next();
             }
 
         } catch(error) {
-            //throw new Error(error);
             console.log("Exception occured during registration .... error: ", error);
-            //next({status: 500, message: error.message})
-            //next(new NotAuthorizedException());
-            res.status(500).json({ "message": "Registration Failed" });
+            //res.status(500).json({ "message": "Registration Failed" });
+            next();
         }
     }
 
     private loggingIn = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
         const loginData: LogInDto = req.body; 
-
-        const ipAddr = req.connection.remoteAddress;
-        console.dir(ipAddr);
-        /*
-        const [resFastByIP, resSlowByIP] = await Promise.all([
-            this.limiterFastBruteByIP.get(ipAddr),
-            this.limiterSlowBruteByIP.get(ipAddr),
-          ]);
-        
-        let retrySecs = 0;
-        // Check if IP is already blocked
-        if (resSlowByIP !== null && resSlowByIP.consumedPoints > this.maxWrongAttemptsByIPperDay) {
-            retrySecs = Math.round(resSlowByIP.msBeforeNext / 1000) || 1;
-        } else if (resFastByIP !== null && resFastByIP.consumedPoints > this.maxWrongAttemptsByIPperMinute) {
-            retrySecs = Math.round(resFastByIP.msBeforeNext / 1000) || 1;
-        }
-
-        console.log("retry...");
-        console.log(retrySecs);
-        if (retrySecs > 0) {
-            res.set('Retry-After', String(retrySecs));
-            res.status(429).send('Too Many Requests');
-        }
-        */
         //console.dir(loginData);
         try {
             const userDocument = await userService.getUser(loginData.email);
             if (!userDocument) {
-                next(new Error('User not found'));
+                //next(new Error('User not found'));
+                next();
             }
             else {
                 // Check for correct password
                 const correctPassword = await bcrypt.compare(loginData.password, userDocument.password);
                 if (!correctPassword) {
-                    console.log('Incorrect password')
-                    throw new Error('Incorrect password')
+                    console.log('Incorrect password');
+                    //throw new Error('Incorrect password');
+                    return next();
                 }
                 // get and sign jwt token
                 const jwtResp:AuthResponse = await this.handleJwtResponse(userDocument, res);
@@ -257,9 +201,8 @@ class AuthenticationController implements Controller {
             }
         } catch(error) {
             console.log("Exception occured loggingIn .... error: ", error);
-            //next(new NotAuthorizedException());
-            //res.status(500).json({ "message": "Login Failed" });
-            next(new Error('Login failed'));
+            //next(new Error('Login failed'));
+            next();
         }
 
     }
