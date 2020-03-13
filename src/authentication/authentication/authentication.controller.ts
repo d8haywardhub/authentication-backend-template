@@ -11,7 +11,8 @@ import userService from '../user/user.service'
 import jwtUtil from './jwt.util';
 import HttpException from '../../common/exceptions/HttpException';
 //const ratelimiterMiddleware = require('../../common/middleware/ratelimiter-slidingwindow.middleware');
-const ratelimiterMiddleware = require('../../common/middleware/ratelimiter.middleware');
+//const ratelimiterMiddleware = require('../../common/middleware/ratelimiter.middleware');
+import ratelimiterMiddleware  from '../../common/middleware/ratelimiter.middleware';
 
 interface AuthResponse {
     user: UserInfo,
@@ -34,14 +35,15 @@ class AuthenticationController implements Controller {
 
     private initializeRoutes() {
         // No need to check authentication during registration or login requests
-        this.router.post(`${this.path}/register`, this.registration, ratelimiterMiddleware);
-        this.router.post(`${this.path}/login`, this.loggingIn, ratelimiterMiddleware);
+        this.router.post(`${this.path}/register`, ratelimiterMiddleware, this.registration);
+        this.router.post(`${this.path}/login`, ratelimiterMiddleware, this.loggingIn);
+        // logout
+        this.router.post(`${this.path}/logout`, this.loggingOut);
 
         // Check authentication for all OTHER requests
         this.router.use('/', this.ensureAuthenticated);
 
-        // logout
-        this.router.post(`${this.path}/logout`, this.loggingOut);
+
     }
 
     private ensureAuthenticated = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -211,10 +213,13 @@ class AuthenticationController implements Controller {
         const logoutData: LogInDto = req.body; 
         console.log(`loggingOut user: ${logoutData.email}`)
         try {
-            const logoutResponse = {
+            const logoutResponse:AuthResponse = {
                 user: {
+                    email: "",
+                    name: "",
+                    role: ""
                 },
-                serverKey: null
+                serverKey: 0
             }
             res.clearCookie("jwt");
             return res.json(logoutResponse).status(200).end();

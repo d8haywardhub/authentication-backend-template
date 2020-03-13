@@ -8,7 +8,6 @@ import * as moment from 'moment';
 const redisClient = redis.createClient();
 
 module.exports = (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    debugger;
     //redisClient.exists(request.headers.user,(err,reply) => {
     redisClient.exists(request.body.email,(err,reply) => {
         if(err){
