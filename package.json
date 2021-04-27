@@ -45,7 +45,7 @@
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
     "rate-limiter-flexible": "^1.2.0",
-    "redis": "^2.8.0",
+    "redis": "^3.1.1",
     "tsc-watch": "^4.0.0",
     "typescript": "^3.7.2"
   }
